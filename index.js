@@ -1,22 +1,15 @@
-const express = require("express");
-const cors = require("cors");
-const { createProxyMiddleware } = require("http-proxy-middleware");
+export default async function handler(req, res) {
+  const apiKey = process.env.OPENAI_API_KEY;
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(req.body)
+  });
 
-app.use("/chat", createProxyMiddleware({
-    target: "https://api.openai.com/v1/chat/completions",
-    changeOrigin: true,
-    pathRewrite: { "^/chat": "" },
-    onProxyReq: (proxyReq, req) => {
-        if (req.headers["authorization"]) {
-            proxyReq.setHeader("Authorization", req.headers["authorization"]);
-        }
-    }
-}));
-
-app.listen(3000, () => {
-    console.log("Proxy running on port 3000");
-});
+  const data = await response.json();
+  res.status(response.status).json(data);
+}
