@@ -1,4 +1,4 @@
-api/web.js
+apix/web.js
 export default async function handler(req, res) {
   // Povolenie CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
