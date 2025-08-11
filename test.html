@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <title>Proxy test</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem}
+    textarea{width:100%;height:120px}
+    button{padding:.6rem 1rem;cursor:pointer}
+    pre{background:#111;color:#0f0;padding:1rem;overflow:auto;white-space:pre-wrap}
+    .row{margin:.75rem 0}
+  </style>
+</head>
+<body>
+  <h1>Test volania cez Vercel proxy</h1>
+
+  <div class="row">
+    <label>URL proxy (nechaj takto):</label><br>
+    <input id="url" style="width:100%" 
+           value="https://nova-proxy-kappa.vercel.app/api/online-access">
+  </div>
+
+  <div class="row">
+    <label>Tvoja správa pre model:</label><br>
+    <textarea id="prompt">Ahoj! Odpíš jednou vetou, že proxy funguje.</textarea>
+  </div>
+
+  <div class="row">
+    <button id="send">Odoslať</button>
+  </div>
+
+  <h3>Odpoveď servera</h3>
+  <pre id="out">(čakám na odoslanie…)</pre>
+
+<script>
+document.getElementById('send').onclick = async () => {
+  const url = document.getElementById('url').value.trim();
+  const prompt = document.getElementById('prompt').value;
+  const out = document.getElementById('out');
+  out.textContent = 'Posielam…';
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3
+      })
+    });
+
+    const text = await resp.text(); // ukážeme presne to, čo príde
+    out.textContent = text;
+  } catch (e) {
+    out.textContent = 'Chyba fetch: ' + e.message;
+  }
+};
+</script>
+</body>
+</html>
