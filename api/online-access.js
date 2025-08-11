@@ -1,53 +1,62 @@
-// api/online-access.js
-export default async function handler(req, res) {
-  // CORS (nevadí ani v mobile, ale nech je to univerzálne)
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <title>Proxy test</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem}
+    textarea{width:100%;height:120px}
+    button{padding:.6rem 1rem;cursor:pointer}
+    pre{background:#111;color:#0f0;padding:1rem;overflow:auto;white-space:pre-wrap}
+    .row{margin:.75rem 0}
+  </style>
+</head>
+<body>
+  <h1>Test volania cez Vercel proxy</h1>
 
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
+  <div class="row">
+    <label>URL proxy (nechaj takto):</label><br>
+    <input id="url" style="width:100%" 
+           value="https://nova-proxy-kappa.vercel.app/api/online-access">
+  </div>
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST is allowed.' });
-  }
+  <div class="row">
+    <label>Tvoja správa pre model:</label><br>
+    <textarea id="prompt">Ahoj! Odpíš jednou vetou, že proxy funguje.</textarea>
+  </div>
 
-  // Bezpečné načítanie JSON tela
-  let body;
+  <div class="row">
+    <button id="send">Odoslať</button>
+  </div>
+
+  <h3>Odpoveď servera</h3>
+  <pre id="out">(čakám na odoslanie…)</pre>
+
+<script>
+document.getElementById('send').onclick = async () => {
+  const url = document.getElementById('url').value.trim();
+  const prompt = document.getElementById('prompt').value;
+  const out = document.getElementById('out');
+  out.textContent = 'Posielam…';
+
   try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-  } catch {
-    return res.status(400).json({ error: 'Invalid JSON body.' });
-  }
-
-  const { model, messages, temperature } = body || {};
-  if (!model || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Missing "model" or "messages" array.' });
-  }
-
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'OPENAI_API_KEY is not set on Vercel.' });
-  }
-
-  try {
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    const resp = await fetch(url, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model,
-        messages,
-        ...(temperature !== undefined ? { temperature } : {}),
-      }),
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3
+      })
     });
 
-    const data = await resp.json();
-    return res.status(resp.status).json(data);
+    const text = await resp.text(); // ukážeme presne to, čo príde
+    out.textContent = text;
   } catch (e) {
-    return res.status(500).json({ error: 'Proxy error', detail: String(e?.message || e) });
+    out.textContent = 'Chyba fetch: ' + e.message;
   }
-}
+};
+</script>
+</body>
+</html>
