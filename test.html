@@ -1,62 +1,54 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sk">
 <head>
-  <meta charset="utf-8">
-  <title>Proxy test</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-    body{font-family:system-ui,Arial,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem}
-    textarea{width:100%;height:120px}
-    button{padding:.6rem 1rem;cursor:pointer}
-    pre{background:#111;color:#0f0;padding:1rem;overflow:auto;white-space:pre-wrap}
-    .row{margin:.75rem 0}
-  </style>
+    <meta charset="UTF-8">
+    <title>Proxy test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
+        textarea { width: 100%; height: 150px; }
+        button { padding: 0.5rem 1rem; margin-top: 10px; cursor: pointer; }
+        pre { background: #f0f0f0; padding: 1rem; overflow-x: auto; }
+    </style>
 </head>
 <body>
-  <h1>Test volania cez Vercel proxy</h1>
+    <h1>Test volania cez Vercel proxy</h1>
+    
+    <label>API URL:</label>
+    <input id="api-url" type="text" value="https://nova-proxy-kappa.vercel.app/api/online-access" style="width: 100%;">
 
-  <div class="row">
-    <label>URL proxy (nechaj takto):</label><br>
-    <input id="url" style="width:100%" 
-           value="https://nova-proxy-kappa.vercel.app/api/online-access">
-  </div>
+    <label>API Key:</label>
+    <input id="api-key" type="text" placeholder="Sem vlož svoj OpenAI API key" style="width: 100%;">
 
-  <div class="row">
-    <label>Tvoja správa pre model:</label><br>
-    <textarea id="prompt">Ahoj! Odpíš jednou vetou, že proxy funguje.</textarea>
-  </div>
+    <label>Správa pre AI:</label>
+    <textarea id="prompt">Ahoj, funguje tento test?</textarea>
+    
+    <button onclick="sendRequest()">Odoslať</button>
 
-  <div class="row">
-    <button id="send">Odoslať</button>
-  </div>
+    <h2>Výsledok:</h2>
+    <pre id="result"></pre>
 
-  <h3>Odpoveď servera</h3>
-  <pre id="out">(čakám na odoslanie…)</pre>
+    <script>
+        async function sendRequest() {
+            const url = document.getElementById('api-url').value;
+            const apiKey = document.getElementById('api-key').value;
+            const prompt = document.getElementById('prompt').value;
 
-<script>
-document.getElementById('send').onclick = async () => {
-  const url = document.getElementById('url').value.trim();
-  const prompt = document.getElementById('prompt').value;
-  const out = document.getElementById('out');
-  out.textContent = 'Posielam…';
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-3.5-turbo",
+                    messages: [{ role: "user", content: prompt }]
+                })
+            });
 
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3
-      })
-    });
-
-    const text = await resp.text(); // ukážeme presne to, čo príde
-    out.textContent = text;
-  } catch (e) {
-    out.textContent = 'Chyba fetch: ' + e.message;
-  }
-};
-</script>
+            const data = await response.json();
+            document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
 </body>
 </html>
