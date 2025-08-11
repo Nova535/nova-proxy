@@ -1,17 +1,30 @@
-online-access.js
 export default async function handler(req, res) {
-  const fetch = (await import('node-fetch')).default;
-  const { url } = req.query;
-
+  const url = req.query.url;
   if (!url) {
-    return res.status(400).json({ error: 'Missing URL parameter' });
+    return res.status(400).json({ error: 'Missing url parameter' });
   }
 
   try {
-    const response = await fetch(url);
-    const data = await response.text();
-    res.status(200).send(data);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'nova-access/1.0',
+        'Accept': '*/*'
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    const contentType = response.headers.get('content-type');
+    const text = await response.text();
+
+    res.setHeader('Content-Type', contentType || 'text/plain');
+    res.status(response.status).send(text);
   } catch (error) {
-    res.status(500).json({ error: error.toString() });
+    res.status(500).json({ error: error.message || String(error) });
   }
 }
